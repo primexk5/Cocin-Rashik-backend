@@ -1,17 +1,16 @@
 const { Sermon } = require('../models');
-
+const { toStr, parseId } = require('../utils/sanitize');
 
 async function createSermon(req, res) {
   try {
-    let { title, preacher, audioUrl, thumbnailUrl } = req.body || {};
+    let title = toStr(req.body?.title, 300);
+    let preacher = toStr(req.body?.preacher, 200);
+    let audioUrl = toStr(req.body?.audioUrl, 500);
+    let thumbnailUrl = toStr(req.body?.thumbnailUrl, 500);
 
     if (req.files) {
-      if (req.files.audio && req.files.audio[0]) {
-        audioUrl = req.files.audio[0].path;
-      }
-      if (req.files.thumbnail && req.files.thumbnail[0]) {
-        thumbnailUrl = req.files.thumbnail[0].path;
-      }
+      if (req.files.audio?.[0]) audioUrl = req.files.audio[0].path;
+      if (req.files.thumbnail?.[0]) thumbnailUrl = req.files.thumbnail[0].path;
     }
 
     if (!title || !preacher || !audioUrl) {
@@ -21,40 +20,43 @@ async function createSermon(req, res) {
     const sermon = await Sermon.create({ title, preacher, audioUrl, thumbnailUrl });
     return res.status(201).json({ success: true, data: sermon });
   } catch (err) {
-    return res.status(500).json({ success: false, message: err.message });
+    console.error('[createSermon]', err);
+    return res.status(500).json({ success: false, message: 'Internal server error' });
   }
-};
+}
 
-// Get all sermons
 async function getSermons(req, res) {
   try {
     const sermons = await Sermon.findAll();
     return res.status(200).json({ success: true, data: sermons });
   } catch (err) {
-    return res.status(500).json({ success: false, message: err.message });
+    console.error('[getSermons]', err);
+    return res.status(500).json({ success: false, message: 'Internal server error' });
   }
-};
+}
 
-// Update a sermon
 async function updateSermon(req, res) {
   try {
-    const { id } = req.params;
-    let { title, preacher, audioUrl, thumbnailUrl } = req.body || {};
+    const id = parseId(req.params.id);
+    if (!id) {
+      return res.status(400).json({ success: false, message: 'A valid numeric Sermon ID is required' });
+    }
+
+    let title = toStr(req.body?.title, 300);
+    let preacher = toStr(req.body?.preacher, 200);
+    let audioUrl = toStr(req.body?.audioUrl, 500);
+    let thumbnailUrl = toStr(req.body?.thumbnailUrl, 500);
 
     if (req.files) {
-      if (req.files.audio && req.files.audio[0]) {
-        audioUrl = req.files.audio[0].path;
-      }
-      if (req.files.thumbnail && req.files.thumbnail[0]) {
-        thumbnailUrl = req.files.thumbnail[0].path;
-      }
+      if (req.files.audio?.[0]) audioUrl = req.files.audio[0].path;
+      if (req.files.thumbnail?.[0]) thumbnailUrl = req.files.thumbnail[0].path;
     }
 
-    if (!id) {
-      return res.status(400).json({ success: false, message: 'Sermon ID is required' });
-    }
-
-    if ((title !== undefined && !title) || (preacher !== undefined && !preacher) || (audioUrl !== undefined && !audioUrl)) {
+    if (
+      (req.body?.title !== undefined && !title) ||
+      (req.body?.preacher !== undefined && !preacher) ||
+      (req.body?.audioUrl !== undefined && !audioUrl && !req.files?.audio?.[0])
+    ) {
       return res.status(400).json({ success: false, message: 'Fields cannot be empty' });
     }
 
@@ -64,17 +66,16 @@ async function updateSermon(req, res) {
     await sermon.update({ title, preacher, audioUrl, thumbnailUrl });
     return res.status(200).json({ success: true, data: sermon });
   } catch (err) {
-    return res.status(500).json({ success: false, message: err.message });
+    console.error('[updateSermon]', err);
+    return res.status(500).json({ success: false, message: 'Internal server error' });
   }
-};
+}
 
-// Delete a sermon
 async function deleteSermon(req, res) {
   try {
-    const { id } = req.params;
-
+    const id = parseId(req.params.id);
     if (!id) {
-      return res.status(400).json({ success: false, message: 'Sermon ID is required' });
+      return res.status(400).json({ success: false, message: 'A valid numeric Sermon ID is required' });
     }
 
     const sermon = await Sermon.findByPk(id);
@@ -83,13 +84,9 @@ async function deleteSermon(req, res) {
     await sermon.destroy();
     return res.status(200).json({ success: true, message: 'Sermon deleted successfully' });
   } catch (err) {
-    return res.status(500).json({ success: false, message: err.message });
+    console.error('[deleteSermon]', err);
+    return res.status(500).json({ success: false, message: 'Internal server error' });
   }
-};
+}
 
-module.exports = {
-  createSermon,
-  getSermons,
-  updateSermon,
-  deleteSermon
-};  
+module.exports = { createSermon, getSermons, updateSermon, deleteSermon };
