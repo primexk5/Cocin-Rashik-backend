@@ -31,10 +31,10 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 
-// ── Global rate limiter (max 100 req / 15 min per IP) ─────────────
+// ── Global rate limiter ───────────────────────────────────────────
 const globalLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 100,
+  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS, 10) || 15 * 60 * 1000,
+  max: parseInt(process.env.RATE_LIMIT_MAX, 10) || 100,
   standardHeaders: true,
   legacyHeaders: false,
   message: { success: false, message: 'Too many requests, please slow down.' },
@@ -43,14 +43,15 @@ app.use(globalLimiter);
 
 // ── Stricter limiter on login ─────────────────────────────────────
 const loginLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 10,
+  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS, 10) || 15 * 60 * 1000,
+  max: parseInt(process.env.LOGIN_RATE_LIMIT_MAX, 10) || 10,
   message: { success: false, message: 'Too many login attempts. Try again in 15 minutes.' },
 });
 
 // ── Body parsers with size limits ────────────────────────────────
-app.use(express.json({ limit: '1mb' }));
-app.use(express.urlencoded({ extended: true, limit: '1mb' }));
+const bodyLimit = process.env.BODY_LIMIT || '1mb';
+app.use(express.json({ limit: bodyLimit }));
+app.use(express.urlencoded({ extended: true, limit: bodyLimit }));
 
 // ── Serve uploaded files statically ──────────────────────────────
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));

@@ -1,16 +1,16 @@
 {
   "development": {
-    "username": "root",
+    "username": null,
     "password": null,
-    "database": "database_development",
+    "database": null,
     "host": "127.0.0.1",
     "dialect": "sqlite",
     "storage": "./database.sqlite"
   },
   "test": {
-    "username": "root",
+    "username": null,
     "password": null,
-    "database": "database_test",
+    "database": null,
     "host": "127.0.0.1",
     "dialect": "sqlite",
     "storage": "./database_test.sqlite"
