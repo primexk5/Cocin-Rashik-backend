@@ -1,0 +1,45 @@
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
+
+// Ensure uploads directory exists
+const uploadDir = 'uploads/';
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
+
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, uploadDir);
+  },
+  filename: function (req, file, cb) {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
+  }
+});
+
+const fileFilter = (req, file, cb) => {
+  if (file.fieldname === 'audio') {
+    if (file.mimetype.startsWith('audio/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Invalid file type. Only audio files are allowed for audio field.'), false);
+    }
+  } else if (file.fieldname === 'thumbnail' || file.fieldname === 'image') {
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error(`Invalid file type. Only images are allowed for ${file.fieldname} field.`), false);
+    }
+  } else {
+    cb(new Error('Unexpected field'), false);
+  }
+};
+
+const upload = multer({
+  storage: storage,
+  limits: { fileSize: 14 * 1024 * 1024 }, // 14MB limit
+  fileFilter: fileFilter
+});
+
+module.exports = upload;
